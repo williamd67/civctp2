@@ -281,7 +281,7 @@ MBCHAR *CivPaths::MakeSavePath(MBCHAR *fullPath, MBCHAR *s1, MBCHAR *s2, MBCHAR 
 		r = stat(CI_FixName(s), &tmpstat);
 #endif
 
-		if (!r) {
+		if (r == 0) {
 			strcat(fullPath, FILE_SEP);
 			return fullPath;
 		}
@@ -410,12 +410,12 @@ MBCHAR *CivPaths::MakeAssetPath
 	r = stat(CI_FixName(s), &tmpstat);
 #endif
 
-	if (!r) return fullPath;
+	if (r == 0) return fullPath;
 	else return NULL;
 }
 
 MBCHAR *CivPaths::FindFile(C3DIR dir, const MBCHAR *filename, MBCHAR *path,
-                           bool silent, bool check_prjfile, bool checkScenario)
+                           bool silent, bool check_prjfile, bool checkScenario, bool checkLocalizedPath)
 {
 	MBCHAR			fullPath[_MAX_PATH];
 
@@ -437,7 +437,7 @@ MBCHAR *CivPaths::FindFile(C3DIR dir, const MBCHAR *filename, MBCHAR *path,
 		if (m_curScenarioPath)
 		{
 			sprintf(fullPath, "%s%s%s%s%s%s%s", m_curScenarioPath, FILE_SEP, m_localizedPath, FILE_SEP, m_assetPaths[dir], FILE_SEP, filename);
-			if (c3files_PathIsValid(fullPath))
+			if (checkLocalizedPath && c3files_PathIsValid(fullPath))
 			{
 				strcpy(path, fullPath);
 				return path;
@@ -454,7 +454,7 @@ MBCHAR *CivPaths::FindFile(C3DIR dir, const MBCHAR *filename, MBCHAR *path,
 		if (m_curScenarioPackPath)
 		{
 			sprintf(fullPath, "%s%s%s%s%s%s%s", m_curScenarioPackPath, FILE_SEP, m_localizedPath, FILE_SEP, m_assetPaths[dir], FILE_SEP, filename);
-			if (c3files_PathIsValid(fullPath))
+			if (checkLocalizedPath && c3files_PathIsValid(fullPath))
 			{
 				strcpy(path, fullPath);
 				return path;
@@ -478,8 +478,8 @@ MBCHAR *CivPaths::FindFile(C3DIR dir, const MBCHAR *filename, MBCHAR *path,
 	)
 	{
 		MBCHAR const *	l_dataPath	= *p;
-		if (MakeAssetPath(fullPath, m_hdPath, l_dataPath, m_localizedPath, m_assetPaths[dir], filename) ||
-		    MakeAssetPath(fullPath, m_hdPath, l_dataPath, m_defaultPath,   m_assetPaths[dir], filename)
+		if (checkLocalizedPath && MakeAssetPath(fullPath, m_hdPath, l_dataPath, m_localizedPath, m_assetPaths[dir], filename) ||
+		                          MakeAssetPath(fullPath, m_hdPath, l_dataPath, m_defaultPath,   m_assetPaths[dir], filename)
 		   )
 		{
 			strcpy(path, fullPath);
@@ -488,7 +488,7 @@ MBCHAR *CivPaths::FindFile(C3DIR dir, const MBCHAR *filename, MBCHAR *path,
 	}
 
 	// When not found in the new data, try the original directories
-	if (MakeAssetPath(fullPath, m_hdPath, m_dataPath, m_localizedPath, m_assetPaths[dir], filename))
+	if (checkLocalizedPath && MakeAssetPath(fullPath, m_hdPath, m_dataPath, m_localizedPath, m_assetPaths[dir], filename))
 	{
 		strcpy(path, fullPath);
 		return path;
@@ -501,7 +501,7 @@ MBCHAR *CivPaths::FindFile(C3DIR dir, const MBCHAR *filename, MBCHAR *path,
 	}
 
 	// The CD will only have the original content
-	if (MakeAssetPath(fullPath, m_cdPath, m_dataPath, m_localizedPath, m_assetPaths[dir], filename))
+	if (checkLocalizedPath && MakeAssetPath(fullPath, m_cdPath, m_dataPath, m_localizedPath, m_assetPaths[dir], filename))
 	{
 		strcpy(path, fullPath);
 		return path;
@@ -515,7 +515,7 @@ MBCHAR *CivPaths::FindFile(C3DIR dir, const MBCHAR *filename, MBCHAR *path,
 
 	if (check_prjfile &&
 	    ((dir == C3DIR_PATTERNS) ||
-			(dir == C3DIR_PICTURES)))
+	     (dir == C3DIR_PICTURES)))
 	{
 		uint32 len = strlen(filename);
 

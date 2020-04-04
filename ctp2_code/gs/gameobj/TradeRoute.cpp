@@ -25,25 +25,27 @@ extern Player** g_player;
 extern Director	*g_director;
 extern UnitPool *g_theUnitPool;
 
-class TradeReport : public SlicObject{
+class TradeReport : public SlicObject
+{
 public:
-    TradeReport(char const *what, TradeRoute route, Unit const &civ, Unit const &rcp) : SlicObject(what){
-	ROUTE_TYPE type;
-	sint32 good;
-	route.GetSourceResource(type, good);
-	
-	Unit src(route->GetSource());
-	Unit dst(route->GetDestination());
+	TradeReport(char const *what, TradeRoute route, Unit const &civ, Unit const &rcp) : SlicObject(what)
+	{
+		ROUTE_TYPE type;
+		sint32 good;
+		route.GetSourceResource(type, good);
 
-	AddGood(good);
-	AddCity(src);
-	AddCity(dst);
-	AddGold(g_theResourceDB->Get(good)->GetFood()); // missuse to pass integer to msg
-	AddGold(g_theResourceDB->Get(good)->GetProduction()); // missuse to pass integer to msg
-	AddGold(g_theResourceDB->Get(good)->GetGold()); // missuse to pass integer to msg
-	AddCivilisation(civ.GetOwner());
-	AddRecipient(rcp.GetOwner());
-    };
+		Unit src(route->GetSource());
+		Unit dst(route->GetDestination());
+
+		AddGood(good);
+		AddCity(src);
+		AddCity(dst);
+		AddGold(g_theResourceDB->Get(good)->GetFood());       // Missuse to pass integer to msg
+		AddGold(g_theResourceDB->Get(good)->GetProduction()); // Missuse to pass integer to msg
+		AddGold(g_theResourceDB->Get(good)->GetGold());       // Missuse to pass integer to msg
+		AddCivilisation(civ.GetOwner());
+		AddRecipient(rcp.GetOwner());
+	};
 };
 
 bool TradeRoute::IsValid() const
@@ -51,52 +53,48 @@ bool TradeRoute::IsValid() const
 	return g_theTradePool->IsValid(m_id);
 }
 
-void TradeRoute::KillRoute(CAUSE_KILL_TRADE_ROUTE cause) // mapped to TradeRoute::Kill in TradeRoute.h
+void TradeRoute::KillRoute(CAUSE_KILL_TRADE_ROUTE cause) // Mapped to TradeRoute::Kill in TradeRoute.h
 {
-	TradeRoute tmp(*this);
-	tmp.RemoveAllReferences(cause);
-}
-
-void TradeRoute::RemoveAllReferences(CAUSE_KILL_TRADE_ROUTE cause)
-{
-	g_director->TradeActorDestroy(*this);
 	TradeRouteData* data = AccessData();
-
+	data->Remove(cause); // Remove route from game but keep reference as long as m_seenBy is not zero
+	
 	Unit source(data->GetSource()), dest(data->GetDestination());
 
-
 	if(g_theUnitPool->IsValid(source))
-		source.DelTradeRoute(*this);
+		source.DelTradeRoute(*this); // Remove route from CityData (m_tradeSourceList), essential because routes of m_tradeSourceList are expected to be active (i.e. no checks on route.IsActive())
 	if(g_theUnitPool->IsValid(dest))
-		dest.DelTradeRoute(*this);
-
-	if(g_theUnitPool->IsValid(source) && g_theUnitPool->IsValid(dest)) {
-		if(source.GetOwner() != dest.GetOwner()) {
-			switch(cause) {
-			    case CAUSE_KILL_TRADE_ROUTE_SENDER_KILLED:
-			    case CAUSE_KILL_TRADE_ROUTE_PIRATED:
-			    case CAUSE_KILL_TRADE_ROUTE_CHANGED_DESTINATION:
-			    case CAUSE_KILL_TRADE_ROUTE_BETTER_OFFER:
+		dest.DelTradeRoute(*this); // Remove route from CityData (m_tradeDestinationList), essential because routes of m_tradeDestinationList are expected to be active (i.e. no checks on route.IsActive())
+	
+	if(g_theUnitPool->IsValid(source) && g_theUnitPool->IsValid(dest))
+	{
+		if(source.GetOwner() != dest.GetOwner())
+		{
+			switch(cause)
+			{
+				case CAUSE_KILL_TRADE_ROUTE_SENDER_KILLED:
+				case CAUSE_KILL_TRADE_ROUTE_PIRATED:
+				case CAUSE_KILL_TRADE_ROUTE_CHANGED_DESTINATION:
+				case CAUSE_KILL_TRADE_ROUTE_BETTER_OFFER:
 				{
-				g_slicEngine->Execute(new TradeReport("360SenderKilledTradeRoute", *this, source, dest));
-				break;
+					g_slicEngine->Execute(new TradeReport("360SenderKilledTradeRoute", *this, source, dest));
+					break;
 				}
-			    case CAUSE_KILL_TRADE_ROUTE_RECIPIENT_KILLED:
+				case CAUSE_KILL_TRADE_ROUTE_RECIPIENT_KILLED:
 				{
-				g_slicEngine->Execute(new TradeReport("360SenderKilledTradeRoute", *this, dest, source));
-				break;
+					g_slicEngine->Execute(new TradeReport("360SenderKilledTradeRoute", *this, dest, source));
+					break;
 				}
-			    case CAUSE_KILL_TRADE_ROUTE_CITY_CHANGED_OWNER:
-			    case CAUSE_KILL_TRADE_ROUTE_CITY_DIED:
-			    case CAUSE_KILL_TRADE_ROUTE_DIPLOMATIC_AGREEMENT:
-			    case CAUSE_KILL_TRADE_ROUTE_WAR:
-			    case CAUSE_KILL_TRADE_ROUTE_EMBARGO:
+				case CAUSE_KILL_TRADE_ROUTE_CITY_CHANGED_OWNER:
+				case CAUSE_KILL_TRADE_ROUTE_CITY_DIED:
+				case CAUSE_KILL_TRADE_ROUTE_DIPLOMATIC_AGREEMENT:
+				case CAUSE_KILL_TRADE_ROUTE_WAR:
+				case CAUSE_KILL_TRADE_ROUTE_EMBARGO:
 				{
-				g_slicEngine->Execute(new TradeReport("360SenderKilledTradeRoute", *this, source, dest));
-				g_slicEngine->Execute(new TradeReport("360SenderKilledTradeRoute", *this, dest, source));
-				break;
+					g_slicEngine->Execute(new TradeReport("360SenderKilledTradeRoute", *this, source, dest));
+					g_slicEngine->Execute(new TradeReport("360SenderKilledTradeRoute", *this, dest, source));
+					break;
 				}
-			    default: // CAUSE_KILL_TRADE_ROUTE_UNKNOWN CAUSE_KILL_TRADE_ROUTE_RESET
+				default: // CAUSE_KILL_TRADE_ROUTE_UNKNOWN CAUSE_KILL_TRADE_ROUTE_RESET
 				{
 				}
 			}
@@ -104,10 +102,39 @@ void TradeRoute::RemoveAllReferences(CAUSE_KILL_TRADE_ROUTE cause)
 	}
 
 	if ((NULL != g_player)  &&
-	    (NULL != g_player[GetPayingFor()])) {
-		g_player[GetPayingFor()]->RemoveTradeRoute(*this, cause); // brings used caravans/trade-units back - 1
+	    (NULL != g_player[GetPayingFor()]))
+	{
+		g_player[GetPayingFor()]->RemoveTradeRoute(*this, cause); // Brings used caravans/trade-units back - 1
 	}
 
+	TradeRoute tmp(*this);
+	tmp.Deactivate();                       // Deactivate route => if a tile of the path is seen again the route will not be drawn any more
+	tmp.RemoveSeenByBit(source.GetOwner()); // Owner should not see it any more instantly
+	tmp.RemoveSeenByBit(dest.GetOwner());   // Receiver should not see it any more instantly
+	tmp.RevealTradeRouteStateIfInVision();  // Reveal trade route state to players where route is in vision, must be after Deactivate()
+}
+
+void TradeRoute::RemoveUnseenRoute() // Mapped to TradeRoute::Kill in TradeRoute.h
+{
+	TradeRouteData* data = AccessData();
+	if(data->SeenByBits() == 0)
+	{
+		TradeRoute tmp(*this);
+		CAUSE_KILL_TRADE_ROUTE cause= data->IsRemoved();
+		tmp.RemoveAllReferences(cause);
+	}
+}
+
+void TradeRoute::RemoveAllReferences(CAUSE_KILL_TRADE_ROUTE cause)
+{
+	g_director->TradeActorDestroy(*this);  // Good animation
+	TradeRouteData* data = AccessData();
+
+	Unit source(data->GetSource()), dest(data->GetDestination());
+	if(g_theUnitPool->IsValid(source))
+		source.DelTradeRoute(*this); // Remove route from CityData (m_tradeSourceList), essential because routes of m_tradeSourceList are expected to be active (i.e. no checks on route.IsActive())
+	if(g_theUnitPool->IsValid(dest))
+		dest.DelTradeRoute(*this);   // Remove route from CityData (m_tradeDestinationList), essential because routes of m_tradeDestinationList are expected to be active (i.e. no checks on route.IsActive())
 	data->RemoveFromCells();
 
 #ifdef RECIPROCAL_ROUTES
@@ -119,9 +146,12 @@ void TradeRoute::RemoveAllReferences(CAUSE_KILL_TRADE_ROUTE cause)
 	}
 #endif
 
-	if(g_network.IsHost()) {
+	if(g_network.IsHost())
+	{
 		g_network.Enqueue(new NetInfo(NET_INFO_CODE_KILL_TRADE_ROUTE, (uint32)*this, (uint32)cause));
-	} else if(g_network.IsClient()) {
+	}
+	else if(g_network.IsClient())
+	{
 		g_network.AddDeadUnit(m_id);
 	}
 
@@ -217,33 +247,49 @@ uint32 TradeRoute::GetColor() const
 	return GetData()->GetColor();
 }
 
-uint32 TradeRoute::GetOutlineColor() const
-{
-	return GetData()->GetOutlineColor();
-}
-
 void TradeRoute::SetColor( uint32 color )
 {
 	AccessData()->SetColor(color);
 }
 
-void TradeRoute::SetOutlineColor( uint32 color )
+void TradeRoute::AddSeenByBit( sint32 player )
 {
-	AccessData()->SetOutlineColor(color);
+	AccessData()->AddSeenByBit(player);
+}
+
+void TradeRoute::RemoveSeenByBit( sint32 player )
+{
+	AccessData()->RemoveSeenByBit(player);
+}
+
+bool TradeRoute::SeenBy( sint32 player ) const
+{
+	return GetData()->SeenBy(player);
+}
+
+void TradeRoute::RedrawRadarMapAlongRoute()
+{
+	AccessData()->RedrawRadarMapAlongRoute();
+}
+
+void TradeRoute::RevealTradeRouteStateIfInVision()
+{
+	AccessData()->RevealTradeRouteStateIfInVision();
 }
 
 void TradeRoute::ReturnPath(const PLAYER_INDEX owner, DynamicArray<MapPoint> &waypoints,
-							DynamicArray<MapPoint> &fullpath,
-							double &cost)
+                            DynamicArray<MapPoint> &fullpath,
+                            double &cost)
 {
 	AccessData()->ReturnPath(owner, waypoints, fullpath, cost);
 }
 
-void TradeRoute::SetPath(DynamicArray<MapPoint> &fullpath,
-						 DynamicArray<MapPoint> &waypoints)
+/* unused
+void TradeRoute::SetPath(DynamicArray<MapPoint> &fullpath, DynamicArray<MapPoint> &waypoints)
 {
 	AccessData()->SetPath(fullpath, waypoints);
 }
+*/
 
 void TradeRoute::GenerateSelectedPath(const MapPoint &pos)
 {
@@ -300,10 +346,12 @@ void TradeRoute::SetPathSelectionState( sint32 state )
 	AccessData()->SetPathSelectionState(state);
 }
 
+/* unused
 void TradeRoute::BeginTurn()
 {
 	AccessData()->BeginTurn();
 }
+*/
 
 sint32 TradeRoute::GetGoldInReturn() const
 {

@@ -6,24 +6,26 @@
 
 class TradeRoute;
 
-enum CAUSE_KILL_TRADE_ROUTE {
-    CAUSE_KILL_TRADE_ROUTE_UNKNOWN,               //  0
-    CAUSE_KILL_TRADE_ROUTE_SENDER_KILLED,         //  1
-    CAUSE_KILL_TRADE_ROUTE_RECIPIENT_KILLED,      //  2
-    CAUSE_KILL_TRADE_ROUTE_PIRATED,               //  3
-    CAUSE_KILL_TRADE_ROUTE_CITY_CHANGED_OWNER,    //  4
-    CAUSE_KILL_TRADE_ROUTE_CITY_DIED,             //  5
-    CAUSE_KILL_TRADE_ROUTE_DIPLOMATIC_AGREEMENT,  //  6
-    CAUSE_KILL_TRADE_ROUTE_CHANGED_DESTINATION,   //  7
-    CAUSE_KILL_TRADE_ROUTE_NO_MORE_CARAVANS,      //  8
-    CAUSE_KILL_TRADE_ROUTE_NO_INITIAL_CARAVANS,   //  9
-    CAUSE_KILL_TRADE_ROUTE_WAR,                   // 10
-    CAUSE_KILL_TRADE_ROUTE_EMBARGO,               // 11
-    CAUSE_KILL_TRADE_ROUTE_RESET,                 // 12
-    CAUSE_KILL_TRADE_ROUTE_BETTER_OFFER,          // 13
+enum CAUSE_KILL_TRADE_ROUTE
+{
+	CAUSE_KILL_TRADE_ROUTE_UNKNOWN,               //  0
+	CAUSE_KILL_TRADE_ROUTE_SENDER_KILLED,         //  1
+	CAUSE_KILL_TRADE_ROUTE_RECIPIENT_KILLED,      //  2
+	CAUSE_KILL_TRADE_ROUTE_PIRATED,               //  3
+	CAUSE_KILL_TRADE_ROUTE_CITY_CHANGED_OWNER,    //  4
+	CAUSE_KILL_TRADE_ROUTE_CITY_DIED,             //  5
+	CAUSE_KILL_TRADE_ROUTE_DIPLOMATIC_AGREEMENT,  //  6
+	CAUSE_KILL_TRADE_ROUTE_CHANGED_DESTINATION,   //  7
+	CAUSE_KILL_TRADE_ROUTE_NO_MORE_CARAVANS,      //  8
+	CAUSE_KILL_TRADE_ROUTE_NO_INITIAL_CARAVANS,   //  9
+	CAUSE_KILL_TRADE_ROUTE_WAR,                   // 10
+	CAUSE_KILL_TRADE_ROUTE_EMBARGO,               // 11
+	CAUSE_KILL_TRADE_ROUTE_RESET,                 // 12
+	CAUSE_KILL_TRADE_ROUTE_BETTER_OFFER,          // 13
 };
 
-enum ROUTE_TYPE {
+enum ROUTE_TYPE
+{
 	ROUTE_TYPE_RESOURCE,
 	ROUTE_TYPE_FOOD,
 	ROUTE_TYPE_GOLD,
@@ -70,9 +72,13 @@ public:
 	BOOL CrossesWater() const;
 
 	uint32 GetColor() const;
-	uint32 GetOutlineColor() const;
 	void SetColor( uint32 color );
-	void SetOutlineColor( uint32 color );
+
+	void AddSeenByBit(sint32 player);
+	void RemoveSeenByBit(sint32 player);
+	bool SeenBy(sint32 player) const;
+	void RedrawRadarMapAlongRoute();
+	void RevealTradeRouteStateIfInVision();
 
 	void ClearSelectedPath();
 	void GenerateSelectedPath(const MapPoint &pos);
@@ -93,6 +99,7 @@ public:
 	BOOL IsActive() const;
 	void Activate();
 	void Deactivate();
+	void RemoveUnseenRoute();
 
 	sint32 GetGoldInReturn() const;
 
@@ -101,10 +108,10 @@ public:
 	void ReturnPath(const PLAYER_INDEX owner, DynamicArray<MapPoint> &waypoints,
 	                DynamicArray<MapPoint> &fullpath,
 	                double &cost);
-	void SetPath(DynamicArray<MapPoint> &fullpath,
-	             DynamicArray<MapPoint> &waypoints);
-
+/* unused
+	void SetPath(DynamicArray<MapPoint> &fullpath,DynamicArray<MapPoint> &waypoints);
 	void BeginTurn();
+*/
 
 	void DontAdjustPointsWhenKilled();
 };
