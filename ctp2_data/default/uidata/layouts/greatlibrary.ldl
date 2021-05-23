@@ -659,7 +659,16 @@ GreatLibraryTopicItem:CTP2_LIST_ITEM {
 	}
 }
 
+GreatLibraryHeaderItem:CTP2_LIST_ITEM {
+	int widthpix 160
+	int heighpix 20
 
+	box:CTP_GREY_TITLE_FONT {
+		string objecttype "ctp2_static"
+		int widthpix 160
+		int heightpix 20
+	}
+}
 
 $
 
