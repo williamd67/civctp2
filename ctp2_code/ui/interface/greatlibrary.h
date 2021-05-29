@@ -29,7 +29,7 @@
 // - Increased maximum library text size to support the German version.
 // - Exported database name size max.
 // - Added function to look up an item name on creation index.
-// - Added alpha <-> index functions. (Sep 13th 2005 Martin G�hmann)
+// - Added alpha <-> index functions. (Sep 13th 2005 Martin Gühmann)
 //
 //----------------------------------------------------------------------------
 //
@@ -48,6 +48,7 @@
 //----------------------------------------------------------------------------
 
 #include <vector>	// std::vector
+#include "CTPDatabase.h"
 
 //----------------------------------------------------------------------------
 // Export overview
@@ -237,10 +238,12 @@ public:
 	bool IsHidden(sint32 index, DATABASE theDatabase) const;
 
 private:
-	void Initialize(MBCHAR const * windowBlock);
-	void AddAdvancesBasedOnAge();
+	static void SortByAgeCallback(aui_Control * control, uint32 action, uint32 data, void * cookie);
 
-	friend void TechListItem::Update(void);
+	void Initialize(MBCHAR const * windowBlock);
+	template <class T>
+	void AddTopics(CTPDatabase<T> * database);
+
 	friend bool greatlibrary_Initialize(sint32 theMode, bool sci);
 
 	ctp2_Button		*m_setGoalButton;
@@ -290,6 +293,7 @@ private:
 	ctp2_Button		*m_conceptButton;
 	ctp2_Button		*m_goodsButton;
 	ctp2_Button		*m_ordersButton;
+	ctp2_Button		*m_sortByAgeButton;
 
 	ctp2_ListBox	*m_topics_list;
 	ctp2_Static		*m_indexLeft;
