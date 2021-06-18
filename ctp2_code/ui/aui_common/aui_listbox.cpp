@@ -25,8 +25,8 @@
 // Modifications from the original Activision code:
 //
 // - Always focus on the latest message.
-// - Initialized local variables. (Sep 9th 2005 Martin Gühmann)
-// - Standardized code (May 21st 2006 Martin Gühmann)
+// - Initialized local variables. (Sep 9th 2005 Martin Gï¿½hmann)
+// - Standardized code (May 21st 2006 Martin Gï¿½hmann)
 //
 //----------------------------------------------------------------------------
 
@@ -841,8 +841,8 @@ AUI_ERRCODE aui_ListBox::CalculateDimensions( void )
 		}
 	}
 
-	m_itemsPerWidth = m_maxItemWidth ? m_width / m_maxItemWidth : 0;
-	m_itemsPerHeight = m_maxItemHeight ? m_height / m_maxItemHeight : 0;
+	m_itemsPerWidth = m_maxItemWidth ? WidthForItems() / m_maxItemWidth : 0;
+	m_itemsPerHeight = m_maxItemHeight ? HeightForItems() / m_maxItemHeight : 0;
 
 	return AUI_ERRCODE_OK;
 }
